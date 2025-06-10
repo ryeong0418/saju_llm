@@ -3,7 +3,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.vectorstores import Chroma
+from langchain_pinecone import PineconeVectorStore
+import pinecone
+import os
 from langchain import hub
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -16,7 +18,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 class RAGChatbot():
 
     def __init__(self):
-        self.llm =  ChatOpenAI(model="gpt-4o")
+        self.llm = ChatOpenAI(model="gpt-4o")
         self.retriever = self.get_retriever()
         self.qa_chain = self.get_chain()
         self.store = {}
@@ -28,13 +30,25 @@ class RAGChatbot():
         return self.store[session_id]
 
     def get_retriever(self):
-        persist_directory = "./chroma_pdf_store"
+        # 1️⃣ API KEY 설정
+        pinecone.init(
+            api_key=os.getenv("PINECONE_API_KEY"),
+            environment=os.getenv("PINECONE_ENVIRONMENT")
+        )
+
+        # 2️⃣ Index 이름 설정
+        index_name = "saju-llm-index"
+
+        # 3️⃣ Embedding 모델
         embedding_model = OpenAIEmbeddings(model="text-embedding-3-large")
 
-        vectorstore = Chroma(
-            #persist_directory=persist_directory,
-            embedding_function=embedding_model
+        # 4️⃣ Vectorstore 선언
+        vectorstore = PineconeVectorStore(
+            index_name=index_name,
+            embedding=embedding_model
         )
+
+        # 5️⃣ Retriever 변환
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
         return retriever

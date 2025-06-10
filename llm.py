@@ -32,7 +32,7 @@ class RAGChatbot():
         embedding_model = OpenAIEmbeddings(model="text-embedding-3-large")
 
         vectorstore = Chroma(
-            persist_directory=persist_directory,
+            #persist_directory=persist_directory,
             embedding_function=embedding_model
         )
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
